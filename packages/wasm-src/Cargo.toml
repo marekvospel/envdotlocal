@@ -1,5 +1,5 @@
 [package]
-name = "localenv"
+name = "envdotlocal-wasm"
 version = "1.0.0"
 authors = ["Marek Vospěl <marek@vospel.cz>"]
 edition = "2018"
