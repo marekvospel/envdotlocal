@@ -6,6 +6,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "wasm-pack build --out-dir ../wasm --target nodejs --scope 'vospel'"
+    "build": "wasm-pack build --out-dir ../wasm --target nodejs --scope 'vospel'",
+    "test": "cargo test && wasm-pack test --node"
   }
 }

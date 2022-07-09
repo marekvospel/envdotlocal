@@ -11,8 +11,8 @@ no_quote = _{
   !("'" | "\"" | "\"\"\"" | NEWLINE)
   ~ ANY
 }
-unquoted_string = ${ no_quote ~ unquoted_inner ~ no_quote }
-unquoted_inner = @{ unquoted_char* }
+unquoted_string = ${ unquoted_inner }
+unquoted_inner = @{ no_quote ~ unquoted_char* }
 unquoted_char = {
     !(WHITE_SPACE | "\\") ~ ANY
     | "\\" ~ ("\"" | "'" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
@@ -44,7 +44,7 @@ triple_char = {
 }
 
 value = { triple_string | double_string | single_string | unquoted_string }
-line = { (NEWLINE | SOI) ~ (("export" ~ WHITE_SPACE+)?~ key ~ "=" ~ value?)? ~ till_end* }
+line = { (NEWLINE | SOI) ~ (WHITE_SPACE* ~ ("export" ~ WHITE_SPACE+)?~ key ~ "=" ~ value?)? ~ till_end* }
 
 file = {
   line*

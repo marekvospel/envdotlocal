@@ -53,3 +53,107 @@ fn parse_inner(s: &str) -> Result<Vec<String>, Error<Rule>> {
 
     Ok(outstr)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::parse_dotenv;
+
+    #[test]
+    fn should_parse_empty_value() {
+        let result = parse_dotenv("EMPTY=");
+
+        assert_eq!(
+            result,
+            Some("key: \"EMPTY\", value: \"\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_unquoted() {
+        let result = parse_dotenv("HELLO=hi");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_unquoted_ignore_after_space() {
+        let result = parse_dotenv("HELLO=hi there");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_single_quote() {
+        let result = parse_dotenv("HELLO='hi'");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_double_quote() {
+        let result = parse_dotenv("HELLO=\"hi\"");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_triple_quote() {
+        let result = parse_dotenv("HELLO=\"\"\"hi\"\"\"");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_triple_quote_multiline() {
+        let result = parse_dotenv(r#"
+HELLO="""hi
+hello :)"""
+"#
+        );
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\nhello :)\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_multiple() {
+        let result = parse_dotenv(r#"
+FIRST=1
+SECOND='2'
+THIRD="3"
+FOURTH="""4"""
+"#);
+
+        assert_eq!(
+            result,
+            Some("key: \"FIRST\", value: \"1\"\nkey: \"SECOND\", value: \"2\"\nkey: \"THIRD\", value: \"3\"\nkey: \"FOURTH\", value: \"4\"".into())
+        );
+    }
+
+    #[test]
+    fn should_parse_indented() {
+        let result = parse_dotenv("  HELLO='hi'");
+
+        assert_eq!(
+            result,
+            Some("key: \"HELLO\", value: \"hi\"".into())
+        );
+    }
+}

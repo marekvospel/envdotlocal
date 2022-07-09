@@ -5,4 +5,5 @@ This project is an alternative to [dotenv](https://github.com/motdotla/dotenv) b
 ## TODO
 - [ ] (rs) replace `"\'"`, `"\\"` etc. with escaped versions
 - [ ] (rs) return parsed key, value pairs to javascript
+- [ ] (pest) ignore comments
 - [ ] (js) read files, update `process.env`
