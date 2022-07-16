@@ -1,25 +1,26 @@
 use pest::error::Error;
 use pest::Parser;
+use std::collections::HashMap;
 
 #[derive(Parser)]
 #[grammar = "./dotenv.pest"]
 struct DotenvParser;
 
-pub(crate) fn parse_dotenv(s: &str) -> Option<String> {
+pub(crate) fn parse_dotenv(s: &str) -> HashMap<String, String> {
     match parse_inner(s) {
-        Ok(v) => Some(v.join("\n")),
-        Err(_) => None,
+        Ok(v) => v,
+        Err(_) => HashMap::new(),
     }
 }
 
-fn parse_inner(s: &str) -> Result<Vec<String>, Error<Rule>> {
+fn parse_inner(s: &str) -> Result<HashMap<String, String>, Error<Rule>> {
     let mut result = DotenvParser::parse(Rule::file, s)?;
 
     let file = result.next().unwrap();
 
     let lines = file.into_inner();
 
-    let mut outstr = Vec::new();
+    let mut out = HashMap::new();
 
     for line in lines.into_iter() {
         let mut line_inner = line.into_inner();
@@ -36,7 +37,7 @@ fn parse_inner(s: &str) -> Result<Vec<String>, Error<Rule>> {
         let value_rule = line_inner.next();
 
         if let None = value_rule {
-            outstr.push(format!("key: \"{}\", value: \"{}\"", key, value));
+            out.insert(key, value);
             continue;
         }
 
@@ -48,82 +49,65 @@ fn parse_inner(s: &str) -> Result<Vec<String>, Error<Rule>> {
             .as_str()
             .into();
 
-        outstr.push(format!("key: \"{}\", value: \"{}\"", key, value));
+        out.insert(key, value);
     }
 
-    Ok(outstr)
+    Ok(out)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parse_dotenv;
+    use crate::parser::parse_dotenv;
 
     #[test]
     fn should_parse_empty_value() {
         let result = parse_dotenv("EMPTY=");
 
-        assert_eq!(
-            result,
-            Some("key: \"EMPTY\", value: \"\"".into())
-        );
+        assert_eq!(result, Some("key: \"EMPTY\", value: \"\"".into()));
     }
 
     #[test]
     fn should_parse_unquoted() {
         let result = parse_dotenv("HELLO=hi");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 
     #[test]
     fn should_parse_unquoted_ignore_after_space() {
         let result = parse_dotenv("HELLO=hi there");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 
     #[test]
     fn should_parse_single_quote() {
         let result = parse_dotenv("HELLO='hi'");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 
     #[test]
     fn should_parse_double_quote() {
         let result = parse_dotenv("HELLO=\"hi\"");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 
     #[test]
     fn should_parse_triple_quote() {
         let result = parse_dotenv("HELLO=\"\"\"hi\"\"\"");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 
     #[test]
     fn should_parse_triple_quote_multiline() {
-        let result = parse_dotenv(r#"
+        let result = parse_dotenv(
+            r#"
 HELLO="""hi
 hello :)"""
-"#
+"#,
         );
 
         assert_eq!(
@@ -134,12 +118,14 @@ hello :)"""
 
     #[test]
     fn should_parse_multiple() {
-        let result = parse_dotenv(r#"
+        let result = parse_dotenv(
+            r#"
 FIRST=1
 SECOND='2'
 THIRD="3"
 FOURTH="""4"""
-"#);
+"#,
+        );
 
         assert_eq!(
             result,
@@ -151,9 +137,6 @@ FOURTH="""4"""
     fn should_parse_indented() {
         let result = parse_dotenv("  HELLO='hi'");
 
-        assert_eq!(
-            result,
-            Some("key: \"HELLO\", value: \"hi\"".into())
-        );
+        assert_eq!(result, Some("key: \"HELLO\", value: \"hi\"".into()));
     }
 }
