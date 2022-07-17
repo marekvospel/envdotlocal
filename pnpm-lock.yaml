@@ -12,7 +12,7 @@ importers:
       '@commitlint/config-conventional': 17.0.3
       husky: 8.0.1
 
-  packages/neon:
+  packages/envdotlocal:
     specifiers:
       cargo-cp-artifact: ^0.1
     devDependencies:
@@ -21,13 +21,10 @@ importers:
   packages/test:
     specifiers:
       dotenv: ^16.0.1
-      neon: workspace:*
+      envdotlocal: workspace:*
     dependencies:
       dotenv: 16.0.1
-      neon: link:../neon
-
-  packages/wasm-src:
-    specifiers: {}
+      envdotlocal: link:../envdotlocal
 
 packages:
 

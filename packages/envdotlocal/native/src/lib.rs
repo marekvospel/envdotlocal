@@ -1,29 +1,36 @@
+use dotenv_parser::ast::{create_tree, Expression, Value as DotenvValue};
+use dotenv_parser::tokens::tokenize;
 use neon::prelude::*;
-use crate::parser::parse_dotenv;
-
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
-
-pub(crate) mod parser;
 
 fn parse(mut cx: FunctionContext) -> JsResult<JsObject> {
-    let arg: Handle<JsString> = cx.argument(0)?;
-    let arg = arg.value(&mut cx);
-    let result = parse_dotenv(&arg);
+  let arg: Handle<JsString> = cx.argument(0)?;
+  let arg = arg.value(&mut cx);
 
-    let out = cx.empty_object();
+  let tokens = tokenize(arg).unwrap();
+  let result = create_tree(tokens);
 
-    for (key, value) in result.into_iter() {
-        let value = cx.string(value);
-        out.set(&mut cx, key.as_str(), value)?;
-    }
+  let out = cx.empty_object();
 
-    Ok(out)
+  for tree_node in result.into_iter() {
+    let Expression::SetExpression(e) = tree_node;
+    let value = cx.string(match e.value {
+      DotenvValue::Literal(s) => s,
+    });
+    out.set(
+      &mut cx,
+      match e.key {
+        DotenvValue::Literal(s) => s,
+      }
+      .as_str(),
+      value,
+    )?;
+  }
+
+  Ok(out)
 }
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("parse", parse)?;
-    Ok(())
+  cx.export_function("parse", parse)?;
+  Ok(())
 }
